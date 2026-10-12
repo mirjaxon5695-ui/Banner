@@ -20,7 +20,7 @@ input[type=text],select{width:100%;padding:10px;border:1px solid var(--bd);borde
 .drop.on{border-color:var(--acc)}
 button{border:0;border-radius:10px;padding:12px;font-size:15px;font-weight:600;color:#fff;cursor:pointer}
 button:disabled{opacity:.6}
-.b1{background:#2563eb}.b2{background:#7c3aed}
+.b1{background:#2563eb}.b2{background:#7c3aed}.b3{background:#059669}
 .prev{display:flex;justify-content:center;align-items:center;background:var(--card);border-radius:14px;padding:12px}
 canvas{max-width:100%;max-height:70vh;width:auto;height:auto;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.15)}
 .note{font-size:12px;color:var(--mut);text-align:center;margin:6px 0 0}
@@ -44,7 +44,7 @@ canvas{max-width:100%;max-height:70vh;width:auto;height:auto;border-radius:8px;b
    <div class="drop" id="drop">Rasmni tanlang yoki tashlang</div>
    <input type="file" id="file" accept="image/*" hidden>
   </div>
-  <div><label>👤 Username</label><input type="text" id="user" value="@sifatli_fasad" autocapitalize="off"></div>
+  <div><label>👤 Username</label><input type="text" id="user" value="@username" autocapitalize="off"></div>
   <div><label>📝 Qo'shimcha matn</label><input type="text" id="sub" value="Digital Creator"></div>
   <div>
    <label>🎨 Fon</label>
@@ -57,10 +57,13 @@ canvas{max-width:100%;max-height:70vh;width:auto;height:auto;border-radius:8px;b
   </div>
   <button class="b1" id="png">Rasm (PNG) yuklash</button>
   <button class="b2" id="vid">Video (5s) yuklash</button>
+  <button class="b3" id="gal">📲 Rasmni galereyaga saqlash</button>
+  <button class="b3" id="galv" style="display:none">📲 Videoni galereyaga saqlash</button>
  </div>
  <div>
   <div class="prev"><canvas id="c" width="1080" height="1920"></canvas></div>
   <p class="note" id="info"></p>
+  <p class="note" style="margin-top:14px;font-weight:600">Muallif: Mirjalol</p>
  </div>
 </div>
 <script>
@@ -167,7 +170,8 @@ $('vid').onclick=()=>{
   rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
   rec.onstop=()=>{
     const b=new Blob(chunks,{type:mime||'video/webm'});
-    saveFile('banner_video.'+ext,b);
+    lastVideo={name:'banner_video.'+ext,blob:b};$('galv').style.display='block';
+    saveFile(lastVideo.name,b);
     busy=false;btn.disabled=false;btn.textContent='Video (5s) yuklash';draw(1);
   };
   rec.start();
@@ -180,6 +184,24 @@ $('vid').onclick=()=>{
   })(performance.now());
 };
 
+let lastVideo=null;
+async function toGallery(name,blob){
+  const type=name.endsWith('.png')?'image/png':name.endsWith('.mp4')?'video/mp4':'video/webm';
+  const f=new File([blob],name,{type});
+  if(navigator.canShare&&navigator.canShare({files:[f]})){
+    try{await navigator.share({files:[f]});return;}
+    catch(e){if(e&&e.name==='AbortError')return;}
+  }
+  saveFile(name,blob);
+  alert('Brauzer galereyaga to\'g\'ridan-to\'g\'ri saqlashni qo\'llamaydi. Fayl yuklandi, uni Yuklamalar/Fayllar papkasidan toping.');
+}
+$('gal').onclick=()=>{
+  draw(1);
+  const bin=atob(cv.toDataURL('image/png').split(',')[1]);
+  const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
+  toGallery('banner.png',new Blob([u],{type:'image/png'}));
+};
+$('galv').onclick=()=>{if(lastVideo)toGallery(lastVideo.name,lastVideo.blob);};
 setSize();
 </script>
 </body>
