@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Banner Generator</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f3f4f6;--card:#fff;--tx:#1f2937;--mut:#6b7280;--bd:#d1d5db;--acc:#2563eb}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111827;--card:#1f2937;--tx:#f3f4f6;--mut:#9ca3af;--bd:#374151}}
+:root[data-theme="dark"]{--bg:#111827;--card:#1f2937;--tx:#f3f4f6;--mut:#9ca3af;--bd:#374151}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:16px}
+.wrap{max-width:900px;margin:0 auto;display:grid;gap:16px}
+@media(min-width:760px){.wrap{grid-template-columns:300px 1fr}}
+h1{font-size:20px;margin:0 0 4px}
+.card{background:var(--card);border-radius:14px;padding:16px;display:grid;gap:12px;height:fit-content}
+label{font-size:13px;font-weight:600;display:block;margin-bottom:5px}
+input[type=text],select{width:100%;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx);font-size:16px}
+.drop{border:2px dashed var(--bd);border-radius:10px;padding:14px;text-align:center;cursor:pointer;color:var(--mut);font-size:14px}
+.drop.on{border-color:var(--acc)}
+button{border:0;border-radius:10px;padding:12px;font-size:15px;font-weight:600;color:#fff;cursor:pointer}
+button:disabled{opacity:.6}
+.b1{background:#2563eb}.b2{background:#7c3aed}
+.prev{display:flex;justify-content:center;align-items:center;background:var(--card);border-radius:14px;padding:12px}
+canvas{max-width:100%;max-height:70vh;width:auto;height:auto;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.15)}
+.note{font-size:12px;color:var(--mut);text-align:center;margin:6px 0 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+ <div class="card">
+  <div><h1>🎨 Banner Generator</h1><div style="font-size:13px;color:var(--mut)">Rasm yuklang, username yozing, yuklab oling</div></div>
+  <div>
+   <label>📐 O'lcham</label>
+   <select id="size">
+    <option value="1080x1920">Reels / Story (1080×1920)</option>
+    <option value="1080x1350">Post 4:5 (1080×1350)</option>
+    <option value="1080x1080">Post kvadrat (1080×1080)</option>
+    <option value="1584x396">Keng banner (1584×396)</option>
+   </select>
+  </div>
+  <div>
+   <label>🖼️ Profil rasmi</label>
+   <div class="drop" id="drop">Rasmni tanlang yoki tashlang</div>
+   <input type="file" id="file" accept="image/*" hidden>
+  </div>
+  <div><label>👤 Username</label><input type="text" id="user" value="@sifatli_fasad" autocapitalize="off"></div>
+  <div><label>📝 Qo'shimcha matn</label><input type="text" id="sub" value="Digital Creator"></div>
+  <div>
+   <label>🎨 Fon</label>
+   <select id="bg">
+    <option value="blue">Och ko'k</option>
+    <option value="pink">Och pushti</option>
+    <option value="dark">Qora</option>
+    <option value="grad">Gradient</option>
+   </select>
+  </div>
+  <button class="b1" id="png">Rasm (PNG) yuklash</button>
+  <button class="b2" id="vid">Video (5s) yuklash</button>
+ </div>
+ <div>
+  <div class="prev"><canvas id="c" width="1080" height="1920"></canvas></div>
+  <p class="note" id="info"></p>
+ </div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const cv=$('c'),ctx=cv.getContext('2d');
+let img=null,busy=false;
+
+function setSize(){
+  const [w,h]=$('size').value.split('x').map(Number);
+  cv.width=w;cv.height=h;
+  $('info').textContent='O\'lcham: '+w+' × '+h+' px';
+  draw(1);
+}
+const ease=t=>1-Math.pow(1-t,3);
+
+function fit(text,maxW,start,weight){
+  let s=start;
+  do{ctx.font=weight+' '+s+'px Arial,sans-serif';s-=2;}while(ctx.measureText(text).width>maxW&&s>16);
+}
+
+function draw(p){
+  const w=cv.width,h=cv.height,e=ease(Math.max(0,Math.min(1,p)));
+  const type=$('bg').value,dark=type==='dark';
+  const user=$('user').value||'@username',sub=$('sub').value;
+  const wide=w/h>2;
+  const g=ctx.createLinearGradient(0,0,w,h);
+  const map={blue:['#ffffff','#e0f2fe'],pink:['#ffffff','#fce7f3'],dark:['#1f2937','#111827'],grad:['#fbc2eb','#a6c1ee']};
+  g.addColorStop(0,map[type][0]);g.addColorStop(1,map[type][1]);
+  ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+
+  let cx,cy,r,tx,ty,align,maxW;
+  if(wide){cx=w*.2;cy=h/2;r=h*.32;tx=w*.42;ty=h/2-10;align='left';maxW=w*.52;
+    ctx.strokeStyle=dark?'rgba(255,255,255,.2)':'rgba(0,0,0,.12)';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(w*.35,h/2-h*.4*e);ctx.lineTo(w*.35,h/2+h*.4*e);ctx.stroke();
+  }else{cx=w/2;r=Math.min(w,h)*.24;cy=h*.4;tx=w/2;ty=cy+r+Math.min(w,h)*.14;align='center';maxW=w*.84;}
+
+  const rr=r*(.6+.4*e);
+  ctx.globalAlpha=e;
+  if(img){
+    ctx.save();ctx.beginPath();ctx.arc(cx,cy,rr,0,Math.PI*2);ctx.clip();
+    const s=Math.max(rr*2/img.width,rr*2/img.height);
+    ctx.drawImage(img,cx-img.width*s/2,cy-img.height*s/2,img.width*s,img.height*s);
+    ctx.restore();
+  }else{
+    ctx.beginPath();ctx.arc(cx,cy,rr,0,Math.PI*2);ctx.fillStyle='#e5e7eb';ctx.fill();
+    ctx.fillStyle='#9ca3af';ctx.font='bold '+Math.round(rr*.5)+'px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('RASM',cx,cy);
+  }
+  ctx.beginPath();ctx.arc(cx,cy,rr,0,Math.PI*2);ctx.strokeStyle=dark?'#374151':'#fff';ctx.lineWidth=Math.max(6,r*.06);ctx.stroke();
+
+  ctx.textAlign=align;ctx.textBaseline='alphabetic';
+  const slide=(1-e)*30;
+  ctx.fillStyle=dark?'#fff':'#1f2937';
+  fit(user,maxW,wide?h*.19:w*.08,'bold');
+  ctx.fillText(user,tx,ty+slide);
+  if(sub){
+    ctx.fillStyle=dark?'#9ca3af':'#6b7280';
+    const fs=parseInt(ctx.font.match(/(\d+)px/)[1]);
+    fit(sub,maxW,Math.round(fs*.55),'normal');
+    ctx.fillText(sub,tx,ty+fs*.9+slide);
+  }
+  ctx.globalAlpha=1;
+}
+
+function load(f){
+  if(!f)return;
+  const u=URL.createObjectURL(f),i=new Image();
+  i.onload=()=>{img=i;$('drop').textContent='✅ '+f.name;$('drop').classList.add('on');draw(1)};
+  i.src=u;
+}
+$('drop').onclick=()=>$('file').click();
+$('file').onchange=e=>load(e.target.files[0]);
+$('drop').ondragover=e=>{e.preventDefault()};
+$('drop').ondrop=e=>{e.preventDefault();load(e.dataTransfer.files[0])};
+['user','sub'].forEach(id=>$(id).addEventListener('input',()=>!busy&&draw(1)));
+$('bg').onchange=()=>!busy&&draw(1);
+$('size').onchange=()=>!busy&&setSize();
+
+async function saveFile(name,blob){
+  let d=null;
+  try{d=await claude.use('downloads');}catch(e){}
+  if(d){
+    try{await d.save({filename:name,data:blob});}
+    catch(e){if(e&&e.code!=='declined')alert('Saqlab bo\'lmadi: '+(e.message||e.code));}
+    return;
+  }
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;
+  document.body.appendChild(a);a.click();a.remove();
+}
+$('png').onclick=()=>{
+  draw(1);
+  cv.toBlob(b=>saveFile('banner.png',b),'image/png');
+};
+
+$('vid').onclick=()=>{
+  if(busy)return;
+  if(!window.MediaRecorder||!cv.captureStream){alert('Brauzeringiz video yozishni qo\'llamaydi. Chrome yoki Safari (yangi) ishlating.');return;}
+  const types=['video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9','video/webm'];
+  const mime=types.find(t=>MediaRecorder.isTypeSupported(t))||'';
+  const ext=mime.includes('mp4')?'mp4':'webm';
+  busy=true;const btn=$('vid');btn.disabled=true;btn.textContent='⏺ Yozilmoqda... (5s)';
+  const rec=new MediaRecorder(cv.captureStream(30),mime?{mimeType:mime,videoBitsPerSecond:8e6}:{});
+  const chunks=[];
+  rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+  rec.onstop=()=>{
+    const b=new Blob(chunks,{type:mime||'video/webm'});
+    saveFile('banner_video.'+ext,b);
+    busy=false;btn.disabled=false;btn.textContent='Video (5s) yuklash';draw(1);
+  };
+  rec.start();
+  let t0=null;
+  (function loop(ts){
+    if(!t0)t0=ts;
+    const el=ts-t0;
+    draw(Math.min(el/2000,1));
+    if(el<5000)requestAnimationFrame(loop);else rec.stop();
+  })(performance.now());
+};
+
+setSize();
+</script>
+</body>
+</html>
